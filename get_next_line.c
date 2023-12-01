@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sdoidi <sdoidi@student.42.fr>              +#+  +:+       +#+        */
+/*   By: root <root@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/14 10:50:35 by sdoidi            #+#    #+#             */
-/*   Updated: 2023/11/29 15:41:43 by sdoidi           ###   ########.fr       */
+/*   Updated: 2023/12/01 19:42:56 by root             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,124 +42,104 @@ char	*ft_strchr(const char *s, int c)
 	return (NULL);
 }
 
-static char	*ft_get_line(char *line)
+static char	*ft_get_line(int fd, char **stock_str, char *line)
 {
-	char	*new_line;
-	int		i;
+	size_t	i;
+	char	*temp;
 
-	new_line = NULL;
 	i = 0;
-	while (line[i] && line[i] != '\n')
+	if (!stock_str[fd])
+		return (NULL);
+	while (stock_str[fd][i] && stock_str[fd][i] != '\n')
 		i++;
-	new_line = malloc((i + 2) * sizeof(char));
-	if (new_line == NULL)
+	if (stock_str[fd][i] == '\n')
+		i++;
+	line = ft_substr(stock_str[fd], 0, i);
+	temp = ft_substr(stock_str[fd], i, ft_strlen(&stock_str[fd][i]));
+	free(stock_str[fd]);
+	stock_str[fd] = temp;
+	if (!line || !temp || ft_strlen(line) == 0)
 	{
+		free(stock_str[fd]);
 		free(line);
+		stock_str[fd] = NULL;
 		return (NULL);
 	}
-	i = 0;
-	while (line[i] != '\0' && line[i] != '\n')
-	{
-		new_line[i] = line[i];
-		i++;
-	}
-	if (line[i] == '\n')
-		new_line[i++] = '\n';
-	new_line[i] = '\0';
-	free(line);
-	line = NULL;
-	return (new_line);
+	return (line);
 }
 
-static void	ft_get_stock(char *stock_str)
-{
-	int		i;
-
-	i = 0;
-	while (stock_str[i] && stock_str[i] != '\n')
-		i++;
-	if (stock_str[i] == '\n')
-		i++;
-	ft_memmove(stock_str, stock_str + i, (BUFFER_SIZE - i));
-	ft_bzero(&stock_str[BUFFER_SIZE - i], i);
-}
-
-static char	*ft_read_file(int fd, char *line, char *stock_str)
+static char	*ft_read_file(int fd, char **stock_str, char *line)
 {
 	int		nb_read;
+	char	*temp;
 
 	nb_read = BUFFER_SIZE;
-	stock_str[ft_strlen(stock_str) + nb_read] = '\0';
-	while (!ft_strchr(stock_str, '\n'))
+	while (nb_read >= 0)
 	{
-		nb_read = read(fd, stock_str, BUFFER_SIZE);
+		ft_bzero(line, BUFFER_SIZE + 1);
+		nb_read = read(fd, line, BUFFER_SIZE);
 		if (nb_read == -1)
 		{
-			free(stock_str);
-			stock_str = NULL;
+			free(stock_str[fd]);
 			return (NULL);
 		}
-		if (nb_read == 0)
-			break;
+		if (!stock_str[fd])
+			stock_str[fd] = ft_strdup(line);
+		else
+		{
+			temp = ft_strjoin(stock_str[fd], line);
+			free(stock_str[fd]);
+			stock_str[fd] = temp;
+		}
+		if (stock_str[fd] && (ft_strchr(stock_str[fd], '\n') || nb_read == 0))
+			return (stock_str[fd]);
 	}
-	line = ft_strjoin(line, stock_str);
+	return (stock_str[fd]);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*stock_str[1024];
+	char		*line;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (NULL);
+	line = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!line)
+		return (NULL);
+	stock_str[fd] = ft_read_file(fd, stock_str, line);
+	free(line);
+	if (!stock_str[fd])
+		return (NULL);
+	line = ft_get_line(fd, stock_str, line);
 	return (line);
 }
 
-char *get_next_line(int fd)
-{
-	static char stock_str[BUFFER_SIZE +1];
-	char 		*line;
-
-	line = NULL;
-	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
-		return (NULL);
-	line = ft_read_file(fd, line, stock_str);
-	if (!line || line[0] == '\0')
-	{
-		free(line);
-		return (NULL);
-	}
-	line = ft_get_line(line);//retourner la ligne jusqu'au premier \n
-	ft_get_stock(stock_str);
-	return (line);
-}
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
-
-int main()
-{
-	char *line;
-	int fd = open("to_read.txt", O_RDONLY);
-	int	i;
-
-	i = 1;
-
-	if (fd < 0)
-	{
-		printf("%s\n", "Erreur lors de l'ouverture du fichier");
-		return 1;
-	}
-	 while (i <= 4) 
-	{
-		line = get_next_line(fd);
-		printf("%s", line);
-		//free(line);
-		i++;
-	}
-	close(fd);
-	return 0;
-}
+// #include <sys/types.h>
+// #include <sys/stat.h>
+// #include <fcntl.h>
+// #include <stdio.h>
 
 // int main()
 // {
-// 	static char buffer[BUFFER_SIZE + 1];
+// 	char *line;
+// 	int fd = open("to_read.txt", O_RDONLY);
+// 	int	i;
 
-// 	buffer = "Dididou\ndessine moi une fleur pour ma maman";
+// 	i = 1;
 
-// 	printf("%s\n", ft_get_next_line(buffer));
-// 	return (0);
+// 	if (fd < 0)
+// 	{
+// 		printf("%s\n", "Erreur lors de l'ouverture du fichier");
+// 		return 1;
+// 	}
+// 	 while (i <= 4)
+// 	{
+// 		line = get_next_line(fd);
+// 		printf("%s", line);
+// 		//free(line);
+// 		i++;
+// 	}
+// 	close(fd);
+// 	return 0;
 // }
