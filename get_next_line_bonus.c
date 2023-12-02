@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: root <root@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/14 10:50:35 by sdoidi            #+#    #+#             */
-/*   Updated: 2023/12/02 16:59:17 by root             ###   ########.fr       */
+/*   Created: 2023/12/02 16:51:34 by root              #+#    #+#             */
+/*   Updated: 2023/12/02 16:53:23 by root             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,32 +114,3 @@ char	*get_next_line(int fd)
 	line = ft_get_line(fd, stock_str, line);
 	return (line);
 }
-
-// #include <sys/types.h>
-// #include <sys/stat.h>
-// #include <fcntl.h>
-// #include <stdio.h>
-
-// int main()
-// {
-// 	char *line;
-// 	int fd = open("to_read.txt", O_RDONLY);
-// 	int	i;
-
-// 	i = 1;
-
-// 	if (fd < 0)
-// 	{
-// 		printf("%s\n", "Erreur lors de l'ouverture du fichier");
-// 		return 1;
-// 	}
-// 	 while (i <= 4)
-// 	{
-// 		line = get_next_line(fd);
-// 		printf("%s", line);
-// 		//free(line);
-// 		i++;
-// 	}
-// 	close(fd);
-// 	return 0;
-// }
